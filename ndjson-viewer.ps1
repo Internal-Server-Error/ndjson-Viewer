@@ -15,10 +15,10 @@ $consolePtr = [Console.Window]::GetConsoleWindow()
 
 $openFileBtn = New-Object System.Windows.Forms.Button
 $propertiesSearchDropDown = New-Object System.Windows.Forms.ComboBox
-$searchOperator = New-Object System.Windows.Forms.TextBox
+$filterOperator = New-Object System.Windows.Forms.TextBox
 $searchTextBox = New-Object System.Windows.Forms.TextBox
-$searchBtn = New-Object System.Windows.Forms.Button
-$resetSearchBtn = New-Object System.Windows.Forms.Button
+$filterBtn = New-Object System.Windows.Forms.Button
+$resetFilterBtn = New-Object System.Windows.Forms.Button
 $gridView = New-Object System.Windows.Forms.DataGridView
 
 $openFileBtn.Location = New-Object System.Drawing.Point(12, 11)
@@ -34,13 +34,13 @@ $propertiesSearchDropDown.Name = "propertiesSearchDropDown"
 $propertiesSearchDropDown.Size = New-Object System.Drawing.Size(121, 23)
 $propertiesSearchDropDown.TabIndex = 0
 
-$searchOperator.Enabled = $false
-$searchOperator.Location = New-Object System.Drawing.Point(139, 41)
-$searchOperator.Name = "searchOperator"
-$searchOperator.Size = New-Object System.Drawing.Size(60, 23)
-$searchOperator.TabIndex = 1
-$searchOperator.Text = "Contains"
-$searchOperator.TextAlign = 'center'
+$filterOperator.Enabled = $false
+$filterOperator.Location = New-Object System.Drawing.Point(139, 41)
+$filterOperator.Name = "filterOperator"
+$filterOperator.Size = New-Object System.Drawing.Size(60, 23)
+$filterOperator.TabIndex = 1
+$filterOperator.Text = "Contains"
+$filterOperator.TextAlign = 'center'
 
 $searchTextBox.Location = New-Object System.Drawing.Point(205, 41)
 $searchTextBox.Name = "searchTextBox"
@@ -48,21 +48,21 @@ $searchTextBox.Size = New-Object System.Drawing.Size(459, 23)
 $searchTextBox.TabIndex = 2
 $searchTextBox.Anchor = 'top,right,left'
 
-$searchBtn.Location = New-Object System.Drawing.Point(670, 40)
-$searchBtn.Name = "searchBtn"
-$searchBtn.Size = New-Object System.Drawing.Size(57, 23)
-$searchBtn.TabIndex = 3
-$searchBtn.Text = "Filter"
-$searchBtn.UseVisualStyleBackColor = $true
-$searchBtn.Anchor = 'top,right'
+$filterBtn.Location = New-Object System.Drawing.Point(670, 40)
+$filterBtn.Name = "filterBtn"
+$filterBtn.Size = New-Object System.Drawing.Size(57, 23)
+$filterBtn.TabIndex = 3
+$filterBtn.Text = "Filter"
+$filterBtn.UseVisualStyleBackColor = $true
+$filterBtn.Anchor = 'top,right'
 
-$resetSearchBtn.Location = New-Object System.Drawing.Point(733, 40)
-$resetSearchBtn.Name = "resetSearchBtn"
-$resetSearchBtn.Size = New-Object System.Drawing.Size(55, 23)
-$resetSearchBtn.TabIndex = 4
-$resetSearchBtn.Text = "Reset"
-$resetSearchBtn.UseVisualStyleBackColor = $true
-$resetSearchBtn.Anchor = 'top,right'
+$resetFilterBtn.Location = New-Object System.Drawing.Point(733, 40)
+$resetFilterBtn.Name = "resetFilterBtn"
+$resetFilterBtn.Size = New-Object System.Drawing.Size(55, 23)
+$resetFilterBtn.TabIndex = 4
+$resetFilterBtn.Text = "Reset"
+$resetFilterBtn.UseVisualStyleBackColor = $true
+$resetFilterBtn.Anchor = 'top,right'
 
 $gridView.AutoSizeColumnsMode = 'Fill'
 $gridView.ColumnHeadersHeightSizeMode = 'AutoSize'
@@ -83,10 +83,10 @@ $mainForm.ShowIcon = $false
 
 $mainForm.Controls.Add($openFileBtn)
 $mainForm.Controls.Add($propertiesSearchDropDown)
-$mainForm.Controls.Add($searchOperator)
+$mainForm.Controls.Add($filterOperator)
 $mainForm.Controls.Add($searchTextBox)
-$mainForm.Controls.Add($searchBtn)
-$mainForm.Controls.Add($resetSearchBtn)
+$mainForm.Controls.Add($filterBtn)
+$mainForm.Controls.Add($resetFilterBtn)
 $mainForm.Controls.Add($gridView)
 
 $dtLogs = New-Object System.Data.DataTable("logs")
@@ -108,9 +108,12 @@ function OpenLogFileAndFillDataTable() {
          $jsonLogLine.psobject.properties | ForEach-Object {
             if ($dtLogs.Columns.Contains($_.Name) -eq $false) {
                $dtLogs.Columns.Add($_.Name)
+               $propertiesSearchDropDown.Items.Add($_.Name)
             }
          }
       }
+
+      $propertiesSearchDropDown.SelectedIndex = 0
       
       foreach ($line in $fileContent) {
          $jsonLogLine = $line | ConvertFrom-Json
@@ -124,22 +127,31 @@ function OpenLogFileAndFillDataTable() {
    }
 }
 
+function ResetDataTable() {
+   if ($dtLogs.Columns.Count -le 0) {
+      return
+   }
+   $columnName = $propertiesSearchDropDown.SelectedItem
+   $dtLogs.DefaultView.RowFilter = "$columnName LIKE '%'"
+   $searchTextBox.Text = ''
+}
+
+function FilterDataTableByPropertyAndSearchText() {
+   if ($dtLogs.Columns.Count -le 0) {
+      return
+   }
+   $columnName = $propertiesSearchDropDown.SelectedItem
+   $searchText = $searchTextBox.Text
+   $dtLogs.DefaultView.RowFilter = "$columnName LIKE '%$searchText%'"
+}
 
 
-
-
-
-
-
-
-
-
-
+$searchTextBox.Add_KeyDown({
+      if ($_.KeyCode -eq "Enter") {
+         FilterDataTableByPropertyAndSearchText
+      }
+   })
+$filterBtn.Add_Click( { FilterDataTableByPropertyAndSearchText })
+$resetFilterBtn.Add_Click( { ResetDataTable })
 $openFileBtn.Add_Click( { OpenLogFileAndFillDataTable })
 $mainForm.ShowDialog()
-
-<#
-
-filter dt:
-$result = $dtPeople.Select("log.level = info")
-#>
