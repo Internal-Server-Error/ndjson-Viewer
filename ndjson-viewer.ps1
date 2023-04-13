@@ -1,4 +1,4 @@
-#Version 1.0
+#Version 2.0
 
 Add-Type -AssemblyName System.Windows.Forms
 [System.Windows.Forms.Application]::EnableVisualStyles()
@@ -96,7 +96,7 @@ function OpenLogFileAndFillDataTable() {
    $openFileDialog = New-Object System.Windows.Forms.OpenFileDialog
    $openFileDialog.InitialDirectory = [Environment]::GetFolderPath('Desktop') 
    $openFileDialog.Title = 'Please Select a ndjson File'
-   $openFileDialog.filter = 'ndjson  (*.ndjson)| *.ndjson'
+   $openFileDialog.filter = 'ndjson  (*.ndjson)| *.ndjson|all  (*.*)| *.*'
    
    if ($openFileDialog.ShowDialog() -eq 1) { 
       
